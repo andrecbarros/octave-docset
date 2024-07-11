@@ -30,8 +30,15 @@ if [ ! -f "$PACKAGE" ]; then
 
     if [ ! -f "Documents/Function-Index.html" ]; then
         printf "${RED}WARNING - wget failed at mirroring the site.${NC}\n"
-        printf "${GREEN}Using local octave html doc.${NC}\n"
-        cp -a /usr/share/doc/octave/octave.html ./Documents
+
+        ldocdir=/usr/share/doc/octave/octave.html
+        if [ -d "$ldocdir" ]; then
+            printf "${GREEN}Using local octave html doc.${NC}\n"
+            cp -a "$ldocdir" ./Documents
+        else
+            printf "${RED}ERROR - local Octave documents site not found.${NC}\n"
+            exit 0
+        fi
     fi
     cd ../../
 
