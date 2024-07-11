@@ -3,42 +3,56 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-VERSION=v6.4.0
-DOCS_URL=https://octave.org/doc/$VERSION/
-printf "${GREEN}Starting to build octave.docset for version $VERSION${NC}\n"
+VERSION=9.1.0
+PACKAGE="Octave-doc-$VERSION.tgz"
+DOC_VER=v$VERSION
+DOC_DIR="docs.octave.org"
+DOC_URL="https://$DOC_DIR/$DOC_VER/"
 
-# clean up previous remains, if any
-rm -rf Contents/Resources
-rm -rf Octave.docset
-mkdir -p Contents/Resources
+if [ ! -f "$PACKAGE" ]; then
+    printf "${GREEN}Starting to build octave.docset for version $VERSION${NC}\n"
 
-# fetch the whole doc site
-cd Contents/Resources
-printf "${GREEN}Starting to download Octave $VERSION documentation from $DOCS_URL${NC}\n"
-wget --mirror --page-requisites --adjust-extension --convert-links --no-parent --quiet --show-progress $DOCS_URL
+    # clean up previous remains, if any
+    rm -rf Contents/Resources
+    rm -rf Octave.docset
 
-# change folder name to just Documents
-mv octave.org/doc/$VERSION ./Documents
-rm -rf octave.org
-cd ../../
+    # Prepare to grab the files
+    mkdir -p Contents/Resources
+    cd Contents/Resources
 
-# bundle up!
-printf "${GREEN}Building the Octave.docset folder...${NC}\n"
-mkdir Octave.docset
-cp -r Contents Octave.docset
-cp assets/icon* Octave.docset
+    # fetch the whole doc site
+    printf "${GREEN}Starting to download Octave $VERSION documentation from $DOC_URL${NC}\n"
+    wget --mirror --page-requisites --adjust-extension --convert-links --no-parent -e robots=off --show-progress --quiet "$DOC_URL"
 
-# create data file from base index page
-python3 octdoc2set.py
+    # change folder name to just Documents
+    mv $DOC_DIR/$DOC_VER ./Documents
+    rm -rf $DOC_DIR
 
-if [ $? -eq 1 ]
-then
-   printf "${RED}Error: Could not build Docset${NC}\n"
-   exit 1;
+    if [ ! -f "Documents/Function-Index.html" ]; then
+        printf "${RED}WARNING - wget failed at mirroring the site.${NC}\n"
+        printf "${GREEN}Using local octave html doc.${NC}\n"
+        cp -a /usr/share/doc/octave/octave.html ./Documents
+    fi
+    cd ../../
+
+    # bundle up!
+    printf "${GREEN}Building the Octave.docset folder...${NC}\n"
+    mkdir Octave.docset
+    cp -r Contents Octave.docset/
+    cp assets/icon* Octave.docset/
+
+    # create data file from base index page
+    python3 octdoc2set.py
+
+    if [ $? -eq 1 ]; then
+        printf "${RED}Error: Could not build Docset${NC}\n"
+        exit 1;
+    fi
+
+    # Create gzip bundle for Dash Contribution
+    printf "${GREEN}Archiving to $PACKAGE ...${NC}\n"
+    tar --remove-files --exclude='.DS_Store' -czf $PACKAGE Octave.docset
+    printf "${GREEN}Finished!${NC}\n"
+else
+    printf "${GREEN}Archive: $PACKAGE alread exist.${NC}\n"
 fi
-
-# Create gzip bundle for Dash Contribution
-printf "${GREEN}Archiving to Octave.tgz ...${NC}\n"
-tar --exclude='.DS_Store' -cvzf Octave.tgz Octave.docset
-
-printf "${GREEN}Finished!${NC}\n"
