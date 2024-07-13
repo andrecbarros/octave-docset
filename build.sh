@@ -5,9 +5,9 @@ NC='\033[0m' # No Color
 
 VERSION=9.1.0
 PACKAGE="Octave-doc-$VERSION.tgz"
-DOC_VER=v$VERSION
-DOC_DIR="docs.octave.org"
-DOC_URL="https://$DOC_DIR/$DOC_VER/"
+DOC_DIR=v$VERSION
+DOC_HOST="docs.octave.org"
+DOC_URL="https://$DOC_HOST/$DOC_DIR/"
 
 if [ ! -f "$PACKAGE" ]; then
     printf "${GREEN}Starting to build octave.docset for version $VERSION${NC}\n"
@@ -25,8 +25,8 @@ if [ ! -f "$PACKAGE" ]; then
     wget --mirror --page-requisites --adjust-extension --convert-links --no-parent -e robots=off --show-progress --quiet "$DOC_URL"
 
     # change folder name to just Documents
-    mv $DOC_DIR/$DOC_VER ./Documents
-    rm -rf $DOC_DIR
+    mv $DOC_HOST/$DOC_DIR ./Documents
+    rm -rf $DOC_HOST
 
     if [ ! -f "Documents/Function-Index.html" ]; then
         printf "${RED}WARNING - wget failed at mirroring the site.${NC}\n"
