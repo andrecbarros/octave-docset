@@ -3,8 +3,8 @@
 | Key                     | Value                                     |
 | ----------------------- | ----------------------------------------- |
 | Author                  | Hans-Helge Buerger                        |
-| Current Octave Version: | v9.1.0                                    |
-| Last Update:            | 12. March 2024                         |
+| Current Octave Version: | v9.2.0                                    |
+| Last Update:            | 16, August 2024                           |
 | Twitter                 | [Twitter](https://twitter.com/obstschale) |
 
 [Octave](http://www.gnu.org/software/octave/) is a programming language for matrix mathematical calculations. It is very similar to [MatLab](http://www.mathworks.de/products/matlab/) and its syntax is almost interchangable. I use Octave at university for _Machine Learning_ and _Speech Processing_ calculations.
