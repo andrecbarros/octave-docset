@@ -3,7 +3,7 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-VERSION=9.2.0
+VERSION=10.1.0
 PACKAGE="Octave-doc-$VERSION.tgz"
 DOC_DIR=v$VERSION
 DOC_HOST="docs.octave.org"
