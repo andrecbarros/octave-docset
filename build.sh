@@ -12,41 +12,51 @@ DOC_URL="https://$DOC_HOST/$DOC_DIR/"
 if [ ! -f "$PACKAGE" ]; then
     printf "${GREEN}Starting to build octave.docset for version $VERSION${NC}\n"
 
-    # clean up previous remains, if any
-    rm -rf Contents/Resources
-    rm -rf Octave.docset
+    version=
+    [ -f .version ] && version=$( cat .version )
 
-    # Prepare to grab the files
-    mkdir -p Contents/Resources
-    cd Contents/Resources
+    if [ ! .$VERSION = .$version ]; then
+        # clean up previous remains, if any
+        rm -rf Contents/Resources
+        rm -rf Octave.docset
 
-    # fetch the whole doc site
-    printf "${GREEN}Starting to download Octave $VERSION documentation from $DOC_URL${NC}\n"
-    wget --mirror --page-requisites --adjust-extension --convert-links --no-parent -e robots=off --show-progress --quiet "$DOC_URL"
+        # Prepare to grab the files
+        mkdir -p Contents/Resources
+        cd Contents/Resources
 
-    # change folder name to just Documents
-    mv $DOC_HOST/$DOC_DIR ./Documents
-    rm -rf $DOC_HOST
+        # fetch the whole doc site
+        printf "${GREEN}Starting to download Octave $VERSION documentation from $DOC_URL${NC}\n"
+        wget --mirror --page-requisites --adjust-extension --convert-links --no-parent -e robots=off --show-progress --quiet "$DOC_URL"
 
-    if [ ! -f "Documents/Function-Index.html" ]; then
-        printf "${RED}WARNING - wget failed at mirroring the site.${NC}\n"
+        # change folder name to just Documents
+        mv $DOC_HOST/$DOC_DIR ./Documents
+        rm -rf $DOC_HOST
 
-        ldocdir=/usr/share/doc/octave/octave.html
-        if [ -d "$ldocdir" ]; then
-            printf "${GREEN}Using local octave html doc.${NC}\n"
-            cp -a "$ldocdir" ./Documents
-        else
-            printf "${RED}ERROR - local Octave documents site not found.${NC}\n"
-            exit 0
+        if [ ! -f "Documents/Function-Index.html" ]; then
+            printf "${RED}WARNING - wget failed at mirroring the site.${NC}\n"
+
+            ldocdir=/usr/share/doc/octave/octave.html
+            if [ -d "$ldocdir" ]; then
+                printf "${GREEN}Using local octave html doc.${NC}\n"
+                cp -a "$ldocdir" ./Documents
+            else
+                printf "${RED}ERROR - local Octave documents site not found.${NC}\n"
+                exit 0
+            fi
         fi
+        cd ../../
+
+        echo "$VERSION" > .version
     fi
-    cd ../../
 
     # bundle up!
     printf "${GREEN}Building the Octave.docset folder...${NC}\n"
-    mkdir Octave.docset
-    cp -r Contents Octave.docset/
-    cp assets/icon* Octave.docset/
+
+    if [ ! -d Octave.docset ]; then
+        mkdir Octave.docset
+        cp -r Contents Octave.docset/
+        cp assets/icon* Octave.docset/
+    fi
 
     # create data file from base index page
     python3 octdoc2set.py
