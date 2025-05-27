@@ -3,7 +3,7 @@
 import os, re, sqlite3
 from bs4 import BeautifulSoup, NavigableString, Tag
 
-db = sqlite3.connect('octave.docset/Contents/Resources/docSet.dsidx')
+db = sqlite3.connect('Octave.docset/Contents/Resources/docSet.dsidx')
 cur = db.cursor()
 
 try: cur.execute('DROP TABLE searchIndex;')
@@ -11,12 +11,13 @@ except: pass
 cur.execute('CREATE TABLE searchIndex(id INTEGER PRIMARY KEY, name TEXT, type TEXT, path TEXT);')
 cur.execute('CREATE UNIQUE INDEX anchor ON searchIndex (name, type, path);')
 
-docpath = 'octave.docset/Contents/Resources/Documents'
+docpath = 'Octave.docset/Contents/Resources/Documents'
 
 pages = {
     "Function": "Function-Index.html",
     "Guide": "Concept-Index.html",
-    "Operator": "Operator-Index.html"
+    "Operator": "Operator-Index.html",
+    "Graphics-Properties": "Graphics-Properties-Index.html"
     }
 
 # loop through each index page
@@ -26,7 +27,7 @@ for p in pages:
     soup = BeautifulSoup(page, 'html.parser')
     any = re.compile('.*')
 
-    for td in soup.find_all('td', attrs={"valign": "top"}):
+    for td in soup.find_all('td', attrs={"class": "printindex-index-entry"}):
         for a in td.find_all('a'):
             name = a.text.strip()
             if len(name) > 0:
