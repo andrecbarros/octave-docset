@@ -8,6 +8,7 @@ PACKAGE="Octave-doc-$VERSION.tgz"
 DOC_DIR=v$VERSION
 DOC_HOST="docs.octave.org"
 DOC_URL="https://$DOC_HOST/$DOC_DIR/"
+LOC_DIR="/usr/share/doc/octave/octave.html"
 
 if [ ! -f "$PACKAGE" ]; then
     printf "${GREEN}Starting to build octave.docset for version $VERSION${NC}\n"
@@ -20,33 +21,47 @@ if [ ! -f "$PACKAGE" ]; then
         rm -rf Contents/Resources
         rm -rf Octave.docset
 
-        # Prepare to grab the files
+        # prepare to grab the files
         mkdir -p Contents/Resources
         cd Contents/Resources
 
-        # fetch the whole doc site
-        printf "${GREEN}Starting to download Octave $VERSION documentation from $DOC_URL${NC}\n"
-        wget --mirror --page-requisites --adjust-extension --convert-links --no-parent -e robots=off --show-progress --quiet "$DOC_URL"
+        # try first installed local Octave documentation
+        if [ -d "${LOC_DIR}" ]; then
+            printf "${GREEN}Using local octave html doc.${NC}\n"
+            cp -a "${LOC_DIR}" ./Documents
 
-        # change folder name to just Documents
-        mv $DOC_HOST/$DOC_DIR ./Documents
-        rm -rf $DOC_HOST
-
-        if [ ! -f "Documents/Function-Index.html" ]; then
-            printf "${RED}WARNING - wget failed at mirroring the site.${NC}\n"
-
-            ldocdir=/usr/share/doc/octave/octave.html
-            if [ -d "$ldocdir" ]; then
-                printf "${GREEN}Using local octave html doc.${NC}\n"
-                cp -a "$ldocdir" ./Documents
+            if [ ! -f "Documents/Function-Index.html" -o ! -f "Documents/Concept-Index.html" -o \
+                 ! -f "Documents/Operator-Index.html" -o ! -f "Documents/Graphics-Properties-Index.html" -o \
+                 ! -f "Documents/index.html" ]; then
+                printf "${RED}Local directory lack the needed files.${NC}\n"
+                rm -rf ./Documents
             else
-                printf "${RED}ERROR - local Octave documents site not found.${NC}\n"
-                exit 0
+                VERSION=$( cat ./Documents/index.html | sed -En "s,.*GNU\s+Octave[ \t({]*(version|)\s*([0-9][0-9.]+\b).*,\2,; T; p; q" )
+                PACKAGE="Octave-doc-$VERSION.tgz"
+                echo "$VERSION" > ../../.version
+            fi
+        fi
+
+        if [ ! -d ./Documents ]; then
+            # fetch the whole doc site
+            printf "${GREEN}Starting to download Octave $VERSION documentation from $DOC_URL${NC}\n"
+            wget --mirror --page-requisites --adjust-extension --convert-links --no-parent -e robots=off --show-progress --quiet "$DOC_URL"
+
+            # change folder name to just Documents
+            mv $DOC_HOST/$DOC_DIR ./Documents
+            rm -rf $DOC_HOST
+
+            if [ ! -f "Documents/Function-Index.html" -o ! -f "Documents/Concept-Index.html" -o \
+                 ! -f "Documents/Operator-Index.html" -o ! -f "Documents/Graphics-Properties-Index.html" -o \
+                 ! -f "Documents/index.html" ]; then
+                printf "${RED}WARNING - wget failed at mirroring properly the site.${NC}\n"
+                exit 1
+            else
+                echo "$VERSION" > ../../.version
             fi
         fi
         cd ../../
 
-        echo "$VERSION" > .version
     fi
 
     # bundle up!
@@ -56,6 +71,37 @@ if [ ! -f "$PACKAGE" ]; then
         mkdir Octave.docset
         cp -r Contents Octave.docset/
         cp assets/icon* Octave.docset/
+
+        cat << __EOF_ >> Octave.docset/meta.json
+{
+    "name": "Octave",
+    "title": "Octave",
+    "urls": [
+        "http://london.kapeli.com/feeds/zzz/user_contributed/build/Octave/Octave.tgz"
+    ],
+    "version": "$VERSION"
+}
+__EOF_
+
+        cat << __EOF_ >> Octave.docset/Contents/Info.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleIdentifier</key>
+  <string>octave</string>
+  <key>CFBundleName</key>
+  <string>Octave</string>
+  <key>DocSetPlatformFamily</key>
+  <string>octave</string>
+  <key>isDashDocset</key>
+  <true/>
+  <key>dashIndexFilePath</key>
+  <string>index.html</string>
+</dict>
+</plist>
+__EOF_
+
     fi
 
     # create data file from base index page
